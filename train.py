@@ -11,6 +11,13 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
 MAX_STEP=100
 logs_train_dir='output/'
+
+def check_weights(sess,scope_name,tensor_name):
+    with tf.variable_scope(scope_name,reuse=True):
+        tensor = tf.get_variable(tensor_name)
+        val=sess.run(tensor)
+        print(tensor_name,val.shape,val)
+
 def train():
     data_fun=data_brainwash.get_image()
     img_path,rects=data_fun.__next__()
@@ -36,6 +43,7 @@ def train():
                 if coord.should_stop():
                     break
                 _ = sess.run(train_op)
+                # check_weights(sess,'conv1','weight')
                 if step % 50 == 0 or (step + 1) == MAX_STEP:
                     checkpoint_path = os.path.join(logs_train_dir, 'model.ckpt')
                     saver.save(sess, checkpoint_path, global_step=step)
