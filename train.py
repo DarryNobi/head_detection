@@ -1,15 +1,17 @@
-from PIL import Image
 import numpy as np
 import tensorflow as tf
 import os
-import model
 import ops
-import data_brainwash
+import data_buscrowd
+# from model import model
+from networks.resnet import resnet_v2_152 as  model
+
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['CUDA_VISIBLE_DEVICES'] = '5'
 
-MAX_STEP=100
+MAX_STEP=10000
+BATCH_SIZE=32
 logs_train_dir='output/'
 
 def check_weights(sess,scope_name,tensor_name):
@@ -17,21 +19,18 @@ def check_weights(sess,scope_name,tensor_name):
         tensor = tf.get_variable(tensor_name)
         val=sess.run(tensor)
         print(tensor_name,val.shape,val)
+        return val
 
 def train():
-    data_fun=data_brainwash.get_image()
-    img_path,rects=data_fun.__next__()
-    image = Image.open(os.path.join('data/brainwash/',img_path))
-    # plt.imshow(image)
-    image_arr = np.array(image)
-    image_arr=image_arr.reshape([1,640,480,3])
+    img,lable=data_buscrowd.get_test_data(batch_size=BATCH_SIZE)
+    x=img
+    y=lable
 
-    x=tf.cast(image_arr,tf.float32)
-    y=int(rects[0]['x1'])
-
-    logits=model.model(x)
-    losses=tf.cast(ops.loss(logits,y),tf.float32)
-    train_op=ops.trainning(losses,0.1)
+    x=tf.cast(x,tf.float32)
+    logits=model(x,num_classes=4)
+    losses=ops.loss_sparse_softmax_cross_entropy(logits,y)
+    acc=ops.evaluation(logits,y)
+    train_op=ops.optimize_adam(losses,0.0001)
 
     saver = tf.train.Saver()
     with tf.Session() as sess:
@@ -42,9 +41,13 @@ def train():
             for step in np.arange(MAX_STEP):
                 if coord.should_stop():
                     break
-                _ = sess.run(train_op)
+                _,val_loss,val_acc,val_logits,val_lable = sess.run([train_op,losses,acc,logits,y])
                 # check_weights(sess,'conv1','weight')
                 if step % 50 == 0 or (step + 1) == MAX_STEP:
+                    print('\n',step,' loss:',val_loss)
+                    print('     ','acc:',val_acc)
+                    val_logits=np.argmax(val_logits,1)
+                    print(val_logits-val_lable)
                     checkpoint_path = os.path.join(logs_train_dir, 'model.ckpt')
                     saver.save(sess, checkpoint_path, global_step=step)
         except tf.errors.OutOfRangeError:

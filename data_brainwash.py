@@ -1,5 +1,8 @@
 import json
 import random
+from PIL import Image
+import os
+import numpy as np
 def get_image(data='train',shuffle=True):
     data_path='data/brainwash/train_boxes.json'
     if(data=='test'):
@@ -12,10 +15,19 @@ def get_image(data='train',shuffle=True):
         i=0
         while True:
             if(shuffle):
-                i=random.randint(0,length)
+                i=random.randint(0,length-1)
             else:
                 i=(i+1)%length
-            yield data_list[i]['image_path'],data_list[i]['rects']
+            image = Image.open(os.path.join('data/brainwash/', data_list[i]['image_path']))
+            # plt.imshow(image)
+            image_arr = np.array(image)
+            image_arr = image_arr.reshape([1, 640, 480, 3])
+            rects=data_list[i]['rects']
+            if (len(rects) > 0):
+                y = [rects[0]['x1'], rects[0]['x2'], rects[0]['y1'], rects[0]['y2']]
+            else:
+                y = [0, 0, 0, 0]
+            yield image_arr,y
 
 # f=get_image()
 # d=f.__next__()
