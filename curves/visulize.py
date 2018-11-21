@@ -12,17 +12,25 @@ contents = f.read()
 f.close()
 acc=contents.split(' ')
 acc=[float(i) for i in acc]
-acc=movingaverage(acc,20)
+acc=movingaverage(acc,30)
 
 f = open('acc_fuzzy.txt')
 contents_fuzzy = f.read()
 f.close()
 acc_fuzzy=contents_fuzzy.split(' ')
 acc_fuzzy=[float(i) for i in acc_fuzzy]
-acc_fuzzy=movingaverage(acc_fuzzy,20)
+acc_fuzzy=movingaverage(acc_fuzzy,30)
+
+f = open('acc_offset.txt')
+contents_offset = f.read()
+f.close()
+acc_offset=contents_offset.split(' ')
+acc_offset=[float(i) for i in acc_offset]
+acc_offset=movingaverage(acc_offset,30)
 
 plt.ylim(0,1)
 plt.plot(acc,'-r')
 plt.plot(acc_fuzzy,'-g')
+plt.plot(acc_offset,'-y')
 plt.show()
 

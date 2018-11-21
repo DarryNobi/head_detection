@@ -12,9 +12,9 @@ from networks.resnet import resnet_v2_152 as  model
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
-MAX_STEP=3000
+MAX_STEP=1000
 BATCH_SIZE=32
 logs_train_dir='output/'
 
