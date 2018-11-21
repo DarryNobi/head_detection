@@ -3,7 +3,7 @@ import tensorflow as tf
 import os
 import time
 import ops
-import data_buscrowd
+import data_buscrowd_fuzzy as data_buscrowd
 import matplotlib.pyplot as plt
 # from model import model
 # from networks.mymodel_with_offset import model as model
@@ -14,7 +14,7 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 
-MAX_STEP=1000
+MAX_STEP=3000
 BATCH_SIZE=32
 logs_train_dir='output/'
 
@@ -45,9 +45,9 @@ def train():
     x=img
     y=lable
     x=tf.cast(x,tf.float32)
-    logits=model(x,num_classes=5)
-    losses=ops.loss_with_offset(logits,y)
-    acc=ops.evaluation_with_offfset(logits,y)
+    logits=model(x,num_classes=4)
+    losses=ops.loss_with_fuzzy_label(logits,y)
+    acc=ops.evaluationwith_fuzzy_label(logits,y)
     # learing_rate = tf.train.exponential_decay(
     #     learning_rate=0.01, global_step=MAX_STEP, decay_steps=200, decay_rate=0.1, staircase=True)
 
@@ -79,13 +79,13 @@ def train():
                     print('     ','acc:',val_acc)
                     print('eg:',val_logits[0],val_lable[0])
                     val_logits=np.argmax(val_logits,1)
-                    print(val_logits-val_lable)
+                    print(val_logits-val_lable[:,0])
                     if(val_acc>max_acc):
                         max_acc=val_acc
                         checkpoint_path = os.path.join(logs_train_dir, 'model_'+str(max_acc)+'.ckpt')
                         saver.save(sess, checkpoint_path, global_step=step)
-            save_list(total_acc,'acc_offset.txt')
-            save_list(total_loss,'loss_offset.txt')
+            save_list(total_acc,'acc_fuzzy.txt')
+            save_list(total_loss,'loss_fuzzy.txt')
         except tf.errors.OutOfRangeError:
             print('Done training epoch limit reached')
         finally:
@@ -99,9 +99,9 @@ def test():
     x = img
     y = lable
     x = tf.cast(x, tf.float32)
-    logits = model(x, num_classes=5)
-    losses = ops.loss_with_offset(logits, y)
-    acc = ops.evaluation_with_offfset(logits, y)
+    logits = model(x, num_classes=4)
+    losses = ops.loss_with_fuzzy_label(logits, y)
+    acc = ops.evaluationwith_fuzzy_label(logits, y)
     saver = tf.train.Saver()
     with tf.Session() as sess:
         coord = tf.train.Coordinator()

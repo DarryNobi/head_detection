@@ -4,8 +4,29 @@ import tensorflow as tf
 def loss_bbox_l1_distence(net_out,labels):
     return tf.reduce_sum(tf.abs(tf.subtract(net_out,labels)))
 
-def loss_bbox_l1_distence(net_out,labels):
-    return tf.reduce_sum(tf.abs(tf.subtract(net_out,labels)))
+def loss_with_offset(net_out,labels):
+    alpa=1
+    batch,num=net_out.shape
+    cls=net_out[:,0:-1]
+    offset=net_out[:,-1]
+    labels=tf.minimum(tf.maximum(tf.cast(tf.round(tf.add(offset,tf.cast(labels,tf.float32))),tf.int32),0),3)
+    loss_cross_entropy=loss_sparse_softmax_cross_entropy(cls,labels)
+    loss=loss_cross_entropy
+    return loss
+
+def loss_with_fuzzy_label(net_out,labels):
+    softmax_out=tf.nn.softmax(net_out)
+    label1=tf.one_hot(labels[:, 0], 4)
+    label2=tf.one_hot(labels[:,1],4)
+    loss1=-tf.reduce_sum(label1 * tf.log(softmax_out), 1)
+    loss2=-tf.reduce_sum(label2 * tf.log(softmax_out), 1)
+    loss=tf.reduce_min([loss1,loss2],0)
+    loss=tf.reduce_mean(loss)
+    return loss
+    # loss_cross_entropy1 = loss_sparse_softmax_cross_entropy(net_out, labels[:,0])
+    # loss_cross_entropy2 = loss_sparse_softmax_cross_entropy(net_out, labels[:,1])
+    # loss=tf.reduce_min(tf.concat([loss_cross_entropy1,loss_cross_entropy2],1))
+    # return loss
 
 def loss_sparse_softmax_cross_entropy(logits,labels):
     with tf.variable_scope('loss') as scope:
@@ -26,4 +47,22 @@ def evaluation(net_out,labels):
         correct = tf.cast(correct,tf.float32)
         accuracy = tf.reduce_mean(correct)
         tf.summary.scalar(scope.name+'/accuracy',accuracy)
+    return accuracy
+
+def evaluation_with_offfset(net_out,labels):
+    cls = net_out[:, 0:-1]
+    offset = net_out[:, -1]
+    labels = tf.minimum(tf.maximum(tf.cast(tf.round(tf.add(offset, tf.cast(labels, tf.float32))), tf.int32), 0), 3)
+    with tf.variable_scope('accuracy') as scope:
+        correct = tf.nn.in_top_k(cls,labels,1)
+        correct = tf.cast(correct,tf.float32)
+        accuracy = tf.reduce_mean(correct)
+        tf.summary.scalar(scope.name+'/accuracy',accuracy)
+    return accuracy
+def evaluationwith_fuzzy_label(net_out,labels):
+    correct1 = tf.nn.in_top_k(net_out, labels[:,0], 1)
+    correct2 = tf.nn.in_top_k(net_out, labels[:,1], 1)
+    correct = tf.logical_or(correct1, correct2)
+    correct = tf.cast(correct, tf.float32)
+    accuracy = tf.reduce_mean(correct)
     return accuracy
