@@ -16,6 +16,7 @@ def loss_with_offset(net_out,labels):
 
 def loss_with_fuzzy_label(net_out,labels):
     softmax_out=tf.nn.softmax(net_out)
+    softmax_out=tf.clip_by_value(softmax_out,1e-8,1.0)
     label1=tf.one_hot(labels[:, 0], 4)
     label2=tf.one_hot(labels[:,1],4)
     loss1=-tf.reduce_sum(label1 * tf.log(softmax_out), 1)
@@ -27,6 +28,21 @@ def loss_with_fuzzy_label(net_out,labels):
     # loss_cross_entropy2 = loss_sparse_softmax_cross_entropy(net_out, labels[:,1])
     # loss=tf.reduce_min(tf.concat([loss_cross_entropy1,loss_cross_entropy2],1))
     # return loss
+
+def loss_with_offset_fuzzy(net_out,labels):
+    alpa=0.5
+    beta=0.5
+    theta=0.1
+    cls = net_out[:, 0:-1]
+    offset = net_out[:, -1]
+    loss_cls=loss_with_fuzzy_label(cls,labels)
+    labels=tf.cast(labels,tf.float32)
+    mean_label=tf.reduce_mean(labels,1)
+    loss_offset=tf.abs(tf.subtract(tf.add(tf.cast(tf.argmax(cls,1),tf.float32),offset),mean_label))
+    loss_offset_value=tf.abs(offset)
+    loss=tf.multiply(alpa,loss_cls)+tf.multiply(beta,loss_offset)+tf.multiply(theta,loss_offset_value)
+    loss=tf.reduce_mean(loss)
+    return loss
 
 def loss_sparse_softmax_cross_entropy(logits,labels):
     with tf.variable_scope('loss') as scope:
@@ -65,4 +81,25 @@ def evaluationwith_fuzzy_label(net_out,labels):
     correct = tf.logical_or(correct1, correct2)
     correct = tf.cast(correct, tf.float32)
     accuracy = tf.reduce_mean(correct)
+    return accuracy
+def evaluationwith_offset_fuzzy_label(net_out,labels):
+    cls = net_out[:, 0:-1]
+    offset = net_out[:, -1]
+    labels=tf.cast(labels,tf.float32)
+    mean_label=tf.reduce_mean(labels,1)
+    correct=tf.less(tf.abs(tf.subtract(tf.add(tf.cast(tf.argmax(cls, 1), tf.float32), offset),mean_label)),0.5)
+    correct = tf.cast(correct, tf.float32)
+    accuracy = tf.reduce_mean(correct)
+    return accuracy
+
+def evaluationwith_offset_fuzzy_label1(net_out,labels):
+    cls = net_out[:, 0:-1]
+    offset = net_out[:, -1]
+    label1 = labels[:, 0]
+    label2 = labels[:, 1]
+    accuracy1 = tf.equal(tf.cast(tf.round(tf.add(tf.cast(tf.argmax(cls, 1), tf.float32), offset)),tf.int32),label1)
+    accuracy2 = tf.equal(tf.cast(tf.round(tf.add(tf.cast(tf.argmax(cls, 1), tf.float32), offset)),tf.int32),label2)
+    accuracy=tf.logical_or(accuracy1,accuracy2)
+    accuracy=tf.cast(accuracy,tf.float32)
+    accuracy=tf.reduce_mean(accuracy)
     return accuracy

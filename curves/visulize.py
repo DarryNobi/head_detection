@@ -7,12 +7,13 @@ def movingaverage(data, window_size):
     return ma_vec
 
 
-f = open('acc_regular.txt')
+f = open('test_acc_fuzzy.txt')
 contents = f.read()
 f.close()
 acc=contents.split(' ')
 acc=[float(i) for i in acc]
 acc=movingaverage(acc,30)
+# acc=acc[0:-1:3]
 
 f = open('acc_fuzzy.txt')
 contents_fuzzy = f.read()
@@ -20,6 +21,7 @@ f.close()
 acc_fuzzy=contents_fuzzy.split(' ')
 acc_fuzzy=[float(i) for i in acc_fuzzy]
 acc_fuzzy=movingaverage(acc_fuzzy,30)
+# acc_fuzzy=acc_fuzzy[0:-1:3]
 
 f = open('acc_offset.txt')
 contents_offset = f.read()
@@ -31,6 +33,6 @@ acc_offset=movingaverage(acc_offset,30)
 plt.ylim(0,1)
 plt.plot(acc,'-r')
 plt.plot(acc_fuzzy,'-g')
-plt.plot(acc_offset,'-y')
+# plt.plot(acc_offset,'-y')
 plt.show()
 
