@@ -30,9 +30,9 @@ def loss_with_fuzzy_label(net_out,labels):
     # return loss
 
 def loss_with_offset_fuzzy(net_out,labels):
-    alpa=0.5
-    beta=0.5
-    theta=0.1
+    alpa=1.0
+    beta=0.1
+    theta=0.02
     cls = net_out[:, 0:-1]
     offset = net_out[:, -1]
     loss_cls=loss_with_fuzzy_label(cls,labels)

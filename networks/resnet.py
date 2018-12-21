@@ -39,7 +39,7 @@ def conv2d_same(inputs, num_outputs, kernel_size, stride, scope=None):
 
 # 定义堆叠的block函数
 @slim.add_arg_scope
-def stack_blocks_dense(net, blocks, outputs_collections=None):
+def stack_blocks_dense(net, blocks, outputs_collections=None,weights_initializer=None):
     for block in blocks:
         with tf.variable_scope(block.scope, 'block', [net]) as sc:
             for i, unit in enumerate(block.args):
@@ -60,6 +60,7 @@ def resnet_arg_scope(is_training=True,
                      weight_decay=0.0001,
                      batch_norm_decay=0.997,
                      batch_norm_epsilon=1e-5,
+                     weights_initializer=tf.truncated_normal_initializer(stddev=0.01),
                      batch_norm_scale=True):
     batch_norm_params = {
         'is_training': is_training,
@@ -85,7 +86,7 @@ def resnet_arg_scope(is_training=True,
 # 定义残差学习单元
 @slim.add_arg_scope
 def bottleneck(inputs, depth, depth_bottleneck, stride,
-               outputs_collections=None, scope=None):
+               outputs_collections=None,weights_initializer=None, scope=None):
     with tf.variable_scope(scope, 'bottleneck_v2', [inputs]) as sc:
         depth_in = slim.utils.last_dimension(inputs.get_shape(), min_rank=4)
         preact = slim.batch_norm(inputs, activation_fn=tf.nn.relu,
@@ -123,8 +124,9 @@ def resnet_v2(inputs,
               scope=None):
     with tf.variable_scope(scope, 'resnet_v2', [inputs], reuse=reuse) as sc:
         end_points_collection = sc.original_name_scope + '_end_points'
-        with slim.arg_scope([slim.conv2d, bottleneck,
+        with slim.arg_scope([slim.conv2d,slim.fully_connected, bottleneck,
                              stack_blocks_dense],
+                            weights_initializer=tf.truncated_normal_initializer(stddev=0.005),
                             outputs_collections=end_points_collection):
             net = inputs
             if include_root_block:
@@ -142,9 +144,7 @@ def resnet_v2(inputs,
             end_points = slim.utils.convert_collection_to_dict(
                 end_points_collection
             )
-            if num_classes is not None:
-                end_points['predictions'] = slim.softmax(net, scope='predictions')
-            net=tf.squeeze(net,[1,2])
+            net = tf.squeeze(net, [1, 2])
             return net#, end_points
 
 

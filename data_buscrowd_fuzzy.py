@@ -10,7 +10,7 @@ def get_file_dir(file):
     for i in path_lists:
         image_dir.append(i[0])
         label_dir1.append(i[1])
-        label_dir2.append(i[1])
+        label_dir2.append(i[2])
     label_dir1 = [int(j) for j in label_dir1]
     label_dir2 = [int(j) for j in label_dir2]
     return image_dir,label_dir1,label_dir2
@@ -38,12 +38,12 @@ def get_batch(image,label1,label2,batch_size=1,capacity=0,image_W=0,image_H=0):
     return image_batch,label_batch
 
 def get_train_data(batch_size):
-    train_file_dir, train_label1,train_label2 = get_file_dir("data/buscrowd/train.csv")
+    train_file_dir, train_label1,train_label2 = get_file_dir("data/buscrowd_fuzzy/train.csv")
     train_batch, train_label_batch = get_batch(train_file_dir, train_label1,train_label2,batch_size=batch_size)
     return train_batch, train_label_batch
 
 def get_test_data(batch_size):
-    test_file_dir, test_label1,test_label2 = get_file_dir("data/buscrowd/test.csv")
+    test_file_dir, test_label1,test_label2 = get_file_dir("data/buscrowd_fuzzy/test.csv")
     test_batch, test_label_batch = get_batch(test_file_dir, test_label1,test_label2,batch_size=batch_size)
     return test_batch, test_label_batch
 
