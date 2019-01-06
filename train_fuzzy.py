@@ -12,10 +12,10 @@ from networks.resnet_with_offset import resnet_v2_152 as  model
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-os.environ['CUDA_VISIBLE_DEVICES'] = '0,5'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
-MAX_STEP=15000
-BATCH_SIZE=16
+MAX_STEP=10000
+BATCH_SIZE=32
 logs_train_dir='output/'
 
 def save_list(data_list,name='result.txt'):
@@ -51,7 +51,7 @@ def train():
     acc=ops.evaluationwith_offset_fuzzy_label(logits,y)
     step_ = tf.Variable(tf.constant(0))
     learing_rate = tf.train.exponential_decay(
-         learning_rate=0.001, global_step=step_, decay_steps=300, decay_rate=0.8, staircase=True)
+         learning_rate=0.001, global_step=step_, decay_steps=100, decay_rate=0.8, staircase=True)
 
     train_op=ops.optimize_adam(losses,learing_rate)
     saver = tf.train.Saver()
@@ -86,7 +86,7 @@ def train():
                     plt.plot(total_test_acc,'-g')
                     plt.pause(0.1)
                 # check_weights( sess,'conv1','weight')
-                if step % 300 == 0 or (step + 1) == MAX_STEP:
+                if step % 500 == 0 or (step + 1) == MAX_STEP:
                     if(val_acc>max_acc):
                         max_acc=val_acc
                         checkpoint_path = os.path.join(logs_train_dir, 'model_'+str(max_acc)+'.ckpt')
@@ -110,7 +110,7 @@ def test():
     y = tf.cond(is_training, lambda: train_lable, lambda: test_lable)
     logits = model(x, num_classes=4)
     losses = ops.loss_with_offset_fuzzy(logits, y)
-    acc = ops.evaluationwith_offset_fuzzy_label1(logits, y)
+    acc = ops.evaluationwith_offset_fuzzy_label(logits, y)
     saver = tf.train.Saver()
     with tf.Session() as sess:
         coord = tf.train.Coordinator()

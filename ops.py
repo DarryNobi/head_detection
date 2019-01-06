@@ -31,15 +31,15 @@ def loss_with_fuzzy_label(net_out,labels):
 
 def loss_with_offset_fuzzy(net_out,labels):
     alpa=1.0
-    beta=0.1
-    theta=0.02
+    beta=0.5
+    theta=0.1
     cls = net_out[:, 0:-1]
     offset = net_out[:, -1]
     loss_cls=loss_with_fuzzy_label(cls,labels)
     labels=tf.cast(labels,tf.float32)
     mean_label=tf.reduce_mean(labels,1)
     loss_offset=tf.abs(tf.subtract(tf.add(tf.cast(tf.argmax(cls,1),tf.float32),offset),mean_label))
-    loss_offset_value=tf.abs(offset)
+    loss_offset_value=tf.maximum(tf.subtract(tf.abs(offset),1),0)
     loss=tf.multiply(alpa,loss_cls)+tf.multiply(beta,loss_offset)+tf.multiply(theta,loss_offset_value)
     loss=tf.reduce_mean(loss)
     return loss
@@ -82,7 +82,7 @@ def evaluationwith_fuzzy_label(net_out,labels):
     correct = tf.cast(correct, tf.float32)
     accuracy = tf.reduce_mean(correct)
     return accuracy
-def evaluationwith_offset_fuzzy_label(net_out,labels):
+def evaluationwith_offset_fuzzy_label_0(net_out,labels):
     cls = net_out[:, 0:-1]
     offset = net_out[:, -1]
     labels=tf.cast(labels,tf.float32)
@@ -92,7 +92,7 @@ def evaluationwith_offset_fuzzy_label(net_out,labels):
     accuracy = tf.reduce_mean(correct)
     return accuracy
 
-def evaluationwith_offset_fuzzy_label1(net_out,labels):
+def evaluationwith_offset_fuzzy_label(net_out,labels):
     cls = net_out[:, 0:-1]
     offset = net_out[:, -1]
     label1 = labels[:, 0]

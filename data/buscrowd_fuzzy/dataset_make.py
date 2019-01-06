@@ -14,14 +14,14 @@ def make_train_set(path):
                 for file in files:
                     data_dict.append([os.path.join(title+path,file).replace('\\','/'),lable[0],lable[1]])
                     # data_dict.append([os.path.join(path,file),lable])
-    csvFile = open('train.csv', 'w', newline='')  # 设置newline，否则两行之间会空一行
+    csvFile = open('test.csv', 'w', newline='')  # 设置newline，否则两行之间会空一行
     writer = csv.writer(csvFile)
     m = len(data_dict)
     for i in range(m):
         writer.writerow(data_dict[i])
     csvFile.close()
 def main():
-    make_train_set('train')
+    make_train_set('test')
 
 if __name__=='__main__':
     main()

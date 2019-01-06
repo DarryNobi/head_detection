@@ -51,7 +51,7 @@ def model(input,num_classes):
         pool3_out = tf.nn.max_pool(conv3_out, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1],
                                padding='SAME', name='pooling')
 
-    reshape = tf.reshape(pool3_out, shape=[batch_size, -1])
+    reshape = tf.reshape(pool3_out, shape=[32, -1])
     dim = reshape.get_shape()[1].value
 
     with tf.variable_scope('fc1') as scope:
@@ -89,11 +89,11 @@ def model(input,num_classes):
 
     with tf.variable_scope('fc4') as scope:
         weights = tf.get_variable('weights',
-                                  shape=[100, num_classes-1],
+                                  shape=[100, num_classes],
                                   dtype=tf.float32,
                                   initializer=tf.truncated_normal_initializer(stddev=0.005, dtype=tf.float32))
         biases = tf.get_variable('biases',
-                                 shape=[num_classes-1],
+                                 shape=[num_classes],
                                  dtype=tf.float32,
                                  initializer=tf.truncated_normal_initializer(stddev=0.005, dtype=tf.float32))
         fc4_out = tf.nn.sigmoid(tf.matmul(fc3_out, weights) + biases, name='local4')
@@ -123,11 +123,11 @@ def model(input,num_classes):
 
     with tf.variable_scope('offset_fc3') as scope:
         weights = tf.get_variable('weights',
-                                  shape=[500, num_classes-1],
+                                  shape=[500, num_classes],
                                   dtype=tf.float32,
                                   initializer=tf.truncated_normal_initializer(stddev=0.005, dtype=tf.float32))
         biases = tf.get_variable('biases',
-                                 shape=[num_classes-1],
+                                 shape=[num_classes],
                                  dtype=tf.float32,
                                  initializer=tf.truncated_normal_initializer(stddev=0.005, dtype=tf.float32))
         offset_fc3_out = tf.nn.sigmoid(tf.matmul(offset_fc2_out, weights) + biases, name='local4')
@@ -136,7 +136,7 @@ def model(input,num_classes):
 
     with tf.variable_scope('fusion_fc4') as scope:
         weights = tf.get_variable('weights',
-                                  shape=[2*num_classes-2, 1],
+                                  shape=[2*num_classes, 1],
                                   dtype=tf.float32,
                                   initializer=tf.truncated_normal_initializer(stddev=0.005, dtype=tf.float32))
         biases = tf.get_variable('biases',

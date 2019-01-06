@@ -7,15 +7,16 @@ import data_buscrowd
 import matplotlib.pyplot as plt
 # from model import model
 # from networks.mymodel_with_offset import model as model
-from networks.resnet import resnet_v2_152 as  model
+from networks.mymodel import model as model
+# from networks.resnet import resnet_v2_152 as  model
 # from networks.google_v3 import inception_v3 as model
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-os.environ['CUDA_VISIBLE_DEVICES'] = '6'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-MAX_STEP=15000
-BATCH_SIZE=16
+MAX_STEP=10000
+BATCH_SIZE=32
 logs_train_dir='output/'
 
 def save_list(data_list,name='result.txt'):
@@ -49,10 +50,11 @@ def train():
     logits=model(x,num_classes=4)
     losses=ops.loss_sparse_softmax_cross_entropy(logits,y)
     acc=ops.evaluation(logits,y)
-    # learing_rate = tf.train.exponential_decay(
-    #     learning_rate=0.01, global_step=MAX_STEP, decay_steps=200, decay_rate=0.1, staircase=True)
+    step_ = tf.Variable(tf.constant(0))
+    learing_rate = tf.train.exponential_decay(
+         learning_rate=0.001, global_step=step_, decay_steps=100, decay_rate=0.8, staircase=True)
 
-    train_op=ops.optimize_adam(losses,0.01)
+    train_op=ops.optimize_adam(losses,learing_rate)
     saver = tf.train.Saver()
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -67,12 +69,17 @@ def train():
             for step in np.arange(MAX_STEP):
                 if coord.should_stop():
                     break
-                _,val_loss,val_acc,val_logits,val_lable = sess.run([train_op,losses,acc,logits,y],feed_dict={is_training: True})
+                _,val_loss,val_acc,val_logits,val_lable,val_lr = sess.run([train_op,losses,acc,logits,y,learing_rate],feed_dict={is_training: True,step_:step})
                 if step % 10 == 0:
                     val_loss_test, val_acc_test = sess.run([losses, acc], feed_dict={is_training: False})
                     total_loss.append(val_loss)
                     total_acc.append(val_acc)
                     total_test_acc.append(val_acc_test)
+                    print('\n',step,' lr:',val_lr,' loss:',val_loss)
+                    print('     ','acc:',val_acc)
+                    print('eg:',val_logits[0],val_lable[0])
+                    val_logits=np.argmax(val_logits,1)
+                    print(val_logits-val_lable)
                     plt.subplot(211)
                     plt.plot(total_loss,'-r')
                     plt.subplot(212)
@@ -81,18 +88,13 @@ def train():
                     plt.pause(0.1)
                 # check_weights( sess,'conv1','weight')
                 if step % 500 == 0 or (step + 1) == MAX_STEP:
-                    print('\n',step,' loss:',val_loss)
-                    print('     ','acc:',val_acc)
-                    print('eg:',val_logits[0],val_lable[0])
-                    val_logits=np.argmax(val_logits,1)
-                    print(val_logits-val_lable)
                     if(val_acc>max_acc):
                         max_acc=val_acc
                         checkpoint_path = os.path.join(logs_train_dir, 'model_'+str(max_acc)+'.ckpt')
                         saver.save(sess, checkpoint_path, global_step=step)
-            save_list(total_acc,'acc_offset.txt')
-            save_list(total_test_acc,'test_acc_offset.txt')
-            save_list(total_loss,'loss_offset.txt')
+            save_list(total_acc,'acc_googlenet.txt')
+            save_list(total_test_acc,'test_acc_googlenet.txt')
+            save_list(total_loss,'loss_googlenet.txt')
         except tf.errors.OutOfRangeError:
             print('Done training epoch limit reached')
         finally:
